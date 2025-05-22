@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="utf-8" />
+  <title>خريطة قمر صناعي مع بحث وعرض خطوط مساحة</title>
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+  <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
+  <style>
+    body { margin:0; padding:0; font-family: sans-serif; }
+    #map { position:absolute; top:0; bottom:0; width:100%; }
+    #search-box {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        z-index: 1;
+        background: white;
+        padding: 10px;
+        border-radius: 6px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+    #search-box input {
+        padding: 6px;
+        font-size: 14px;
+        width: 200px;
+    }
+    #search-box button {
+        padding: 6px 10px;
+        font-size: 14px;
+        cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<div id="search-box">
+  <input type="text" id="search" placeholder="اكتب اسم الموقع..." />
+  <button onclick="searchFeature()">بحث</button>
+</div>
+
+<div id="map"></div>
+
+<script>
+mapboxgl.accessToken = 'pk.eyJ1IjoibW9oYW1tZWQtMTMzMSIsImEiOiJjbHY3dHFsaDcwZWcyMm9xaXBmdHVibm11In0.BDSWP06iKFsCOxq0IwxLBg';
+
+const map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/mohammed-1331/cmav35y3d003l01sc46d02q65',
+    center: [34.66, 31.47],
+    zoom: 13
+});
+
+// بيانات GeoJSON (المساحة كـ Polygon)
+const myGeoJSON = {
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": { "name": "دير ياسين" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+            [34.641, 31.462], [34.644, 31.462], [34.646, 31.462], [34.651, 31.462],
+            [34.653, 31.462], [34.656, 31.462], [34.661, 31.461], [34.666, 31.461],
+            [34.670, 31.461], [34.673, 31.460], [34.675, 31.465], [34.676, 31.468],
+            [34.676, 31.468], [34.677, 31.470], [34.677, 31.472], [34.678, 31.473],
+            [34.678, 31.473], [34.677, 31.477], [34.676, 31.479], [34.673, 31.481],
+            [34.672, 31.482], [34.671, 31.482], [34.670, 31.483], [34.668, 31.483],
+            [34.666, 31.483], [34.664, 31.486], [34.663, 31.486], [34.660, 31.486],
+            [34.660, 31.487], [34.659, 31.486], [34.659, 31.486], [34.658, 31.485],
+            [34.658, 31.485], [34.657, 31.485], [34.657, 31.485], [34.656, 31.486],
+            [34.656, 31.486], [34.656, 31.486], [34.655, 31.486], [34.654, 31.486],
+            [34.653, 31.486], [34.651, 31.486], [34.649, 31.486], [34.648, 31.485],
+            [34.647, 31.485], [34.646, 31.485], [34.645, 31.485], [34.640, 31.477],
+            [34.640, 31.476], [34.640, 31.475], [34.640, 31.474], [34.639, 31.470],
+            [34.640, 31.467], [34.641, 31.465], [34.641, 31.462]
+        ]]
+      }
+    }
+  ]
+};
+
+// إضافة المصدر والطبقة عند تحميل الخريطة
+map.on('load', () => {
+  map.addSource('custom-area', {
+    type: 'geojson',
+    data: myGeoJSON
+  });
+
+  // الطبقة الخطية لعرض حدود المساحة فقط (بين زوم 10 و20)
+  map.addLayer({
+    id: 'area-outline',
+    type: 'line',
+    source: 'custom-area',
+    paint: {
+      'line-color': '#FF0000',
+      'line-width': 1
+    },
+    minzoom: 10,
+    maxzoom: 20
+  });
+});
+
+// وظيفة البحث
+function searchFeature() {
+    const searchTerm = document.getElementById('search').value.trim().toLowerCase();
+
+    if (!searchTerm) {
+        alert("الرجاء إدخال اسم للبحث.");
+        return;
+    }
+
+    const feature = myGeoJSON.features.find(f =>
+        f.properties.name.toLowerCase().includes(searchTerm)
+    );
+
+    if (feature) {
+        const coords = feature.geometry.coordinates[0][0]; // أول نقطة من المضلع
+        map.flyTo({ center: coords, zoom: 15 });
+
+        new mapboxgl.Popup()
+            .setLngLat(coords)
+            .setHTML(`<strong>${feature.properties.name}</strong>`)
+            .addTo(map);
+    } else {
+        alert('لم يتم العثور على الموقع.');
+    }
+}
+</script>
+
+</body>
+</html>
